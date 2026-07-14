@@ -54,6 +54,12 @@ const makeDefaultHtmlLoader = () => ({
       sources: {
         list: [
           '...',
+          {
+            tag: 'script',
+            attribute: 'src',
+            type: 'src',
+            filter: () => false, // FIXED: Forces Webpack to leave external 8th Wall script CDN tags alone
+          },
           ...ATTRIBUTES_TO_EXPAND.map(attr => ({
             tag: '*',
             attribute: attr,
@@ -76,7 +82,7 @@ const config = {
     new HtmlWebpackPlugin({
       template: path.join(srcPath, 'index.html'),
       filename: 'index.html',
-      inject: 'body', // FIXED: Injects bundle at the bottom of <body> so CDN scripts load first
+      inject: 'body', // Injects bundle at the bottom of <body> so CDN scripts finish executing first
     }),
     new CopyWebpackPlugin({
       patterns: [
