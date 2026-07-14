@@ -2,25 +2,24 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>Park Wildlife AR Zone</title>
     
     <!-- Core A-Frame framework -->
     <script src="https://aframe.io"></script>
     
-    <!-- 8th Wall Open-Source WebAR Engine Library -->
-    <script src="https://8thwall.org"></script>
-
-    <!-- 8th Wall Extras Component System -->
-    <script src="https://8thwall.org"></script>
+    <!-- 8th Wall Engine Scripts configured with cross-origin execution permissions -->
+    <script src="https://8thwall.org" crossorigin="anonymous"></script>
+    <script src="https://8thwall.org" crossorigin="anonymous"></script>
 
     <style>
-      /* Quick UI Styling for the capture layout */
+      /* Absolute layout layer mapping for UI overlay panels */
       .ar-ui-container {
         position: absolute;
-        bottom: 20px;
+        bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 999;
+        z-index: 9999;
         display: flex;
         gap: 15px;
       }
@@ -28,11 +27,12 @@
         background: #1e4620;
         color: white;
         border: 2px solid #ffffff;
-        padding: 12px 24px;
+        padding: 14px 28px;
         font-size: 16px;
         font-weight: bold;
         border-radius: 30px;
         cursor: pointer;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
       }
     </style>
   </head>
@@ -40,15 +40,14 @@
 
     <!-- UI Interaction Overlay Container -->
     <div class="ar-ui-container">
-      <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
+      <button class="btn" onclick="window.spawnAnimal('tiger')">Bengal Tiger</button>
     </div>
 
-    <!-- 8th Wall Enabled WebAR Scene Initialization (Configured to auto-start tracking systems) -->
+    <!-- 8th Wall WebAR Scene Configured with native camera streaming parameters -->
     <a-scene 
-      xrweb="allowedDevices: any" 
+      xrweb="allowedDevices: any; defaultCamera: true" 
       xrextras-gesture-detector 
-      xrextras-loading
-      component-listener>
+      xrextras-loading>
       
       <!-- Preloaded 3D GLTF/GLB Asset Containers -->
       <a-assets>
@@ -56,7 +55,7 @@
       </a-assets>
 
       <!-- Active Viewport Perspective Rig -->
-      <a-camera id="camera" position="0 1.6 0"></a-camera>
+      <a-camera id="camera" position="0 1.6 0" raycaster="objects: .cantap" cursor="fuse: false; rayOrigin: mouse;"></a-camera>
 
       <!-- Surface SLAM Tracking Group -->
       
@@ -64,30 +63,32 @@
         
       
 
-      <!-- Ambient and Directional Dynamic Scene Illumination -->
+      <!-- Illumination Rig -->
       
       
 
     </a-scene>
 
     <script>
-      // Force direct execution logic for structural asset model swap requests
+      // Global namespace registry function for scene-independent model loading
       window.spawnAnimal = function(type) {
         const entity = document.getElementById('active-wildlife');
-        if (entity && type === 'tiger') {
-          entity.setAttribute('gltf-model', '#tiger-model');
-          console.log("Bengal Tiger model applied successfully!");
+        if (entity) {
+          if (type === 'tiger') {
+            entity.setAttribute('gltf-model', '#tiger-model');
+            console.log("Bengal Tiger asset active inside scene container tree.");
+          }
+        } else {
+          console.warn("3D Engine Context is currently assembling. Retrying alignment...");
+          setTimeout(() => window.spawnAnimal(type), 250);
         }
       };
 
-      // Automatically attempt to register the scene elements the moment the window loads
+      // Auto-trigger fallback layout setup routine
       window.addEventListener('load', () => {
-        const sceneEl = document.querySelector('a-scene');
-        if (sceneEl) {
-          console.log("A-Scene found. Forcing 8th Wall component initialization.");
-          // Trigger the model loading manually without waiting for a tracking loop callback
-          setTimeout(() => window.spawnAnimal('tiger'), 1000);
-        }
+        setTimeout(() => {
+          window.spawnAnimal('tiger');
+        }, 500);
       });
     </script>
   </body>
