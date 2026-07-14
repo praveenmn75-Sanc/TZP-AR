@@ -7,10 +7,10 @@
     <!-- Core A-Frame framework -->
     <script src="https://aframe.io"></script>
     
-    <!-- 1. CORRECTED: 8th Wall Open-Source WebAR Engine Library -->
+    <!-- 8th Wall Open-Source WebAR Engine Library -->
     <script src="https://8thwall.org"></script>
 
-    <!-- 2. CORRECTED: 8th Wall Extras Component System -->
+    <!-- 8th Wall Extras Component System -->
     <script src="https://8thwall.org"></script>
 
     <style>
@@ -43,8 +43,8 @@
       <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
     </div>
 
-    <!-- 8th Wall Enabled WebAR Scene Initialization -->
-    <a-scene xrweb xrextras-gesture-detector xrextras-loading>
+    <!-- 8th Wall Enabled WebAR Scene Initialization (Configured to support desktop previews) -->
+    <a-scene xrweb="allowedDevices: any" xrextras-gesture-detector xrextras-loading>
       
       <!-- Preloaded 3D GLTF/GLB Asset Containers -->
       <a-assets>
@@ -67,11 +67,19 @@
     </a-scene>
 
     <script>
-      // Runtime handling execution logic for structural asset model swap requests
+      // Safe execution logic for model swap requests
       function spawnAnimal(type) {
         const entity = document.getElementById('active-wildlife');
+        
+        // Safety check to ensure A-Frame scene is ready
+        if (!entity) {
+          console.warn("AR Wildlife Entity is still loading inside the 3D scene... please try again in a moment.");
+          return;
+        }
+
         if (type === 'tiger') {
           entity.setAttribute('gltf-model', '#tiger-model');
+          console.log("Bengal Tiger model applied successfully!");
         }
       }
     </script>
