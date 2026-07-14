@@ -5,14 +5,11 @@
     <title>Park Wildlife AR Zone</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     
-    <!-- Core Stable A-Frame framework -->
+    <!-- STABLE PAIRING: A-Frame 1.2.0 + Fixed Release AR.js to ensure immediate camera invocation -->
     <script src="https://aframe.io"></script>
-    
-    <!-- Open-Source Native Camera AR Engine Library -->
     <script src="https://githack.com"></script>
 
     <style>
-      /* Quick UI Styling for the interaction layout */
       .ar-ui-container {
         position: absolute;
         bottom: 20px;
@@ -33,7 +30,6 @@
         cursor: pointer;
         box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
       }
-      /* Clean browser body settings for streaming canvas frames */
       body {
         margin: 0;
         overflow: hidden;
@@ -47,23 +43,23 @@
       <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
     </div>
 
-    <!-- Initialize Open Camera Tracking Component Setup -->
-    <a-scene 
-      embedded 
-      arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+    <!-- Initialize Camera View Tracking System -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       
       <!-- Preloaded 3D GLTF/GLB Asset Containers -->
       <a-assets>
         <a-asset-item id="tiger-model" src="https://jsdelivr.net"></a-asset-item>
       </a-assets>
 
-      <!-- Active Viewport Perspective Rig tracking the environment video feed -->
-      <a-marker-camera preset="hiro">
+      <!-- Anchored 3D Scene Node positioned directly in front of user's field of view -->
+      
         
-        
-      </a-marker-camera>
+      
 
-      <!-- Ambient and Directional Dynamic Scene Illumination -->
+      <!-- Explicit camera rigging forced into tracking scene framework -->
+      
+
+      <!-- Lighting Layers -->
       
       
 
@@ -78,6 +74,11 @@
           console.log("Bengal Tiger model applied successfully!");
         }
       };
+      
+      // Auto-trigger the asset setup on window completion
+      window.addEventListener('load', () => {
+        setTimeout(() => window.spawnAnimal('tiger'), 800);
+      });
     </script>
   </body>
 </html>
