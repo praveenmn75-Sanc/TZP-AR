@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Park Wildlife AR Zone</title>
+    
+    <!-- Core A-Frame framework -->
+    <script src="https://aframe.io"></script>
+    
+    <!-- 1. CORRECTED: 8th Wall Open-Source WebAR Engine Library -->
+    <script src="https://8thwall.org"></script>
+
+    <!-- 2. CORRECTED: 8th Wall Extras Component System -->
+    <script src="https://8thwall.org"></script>
+
+    <style>
+      /* Quick UI Styling for the capture layout */
+      .ar-ui-container {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 999;
+        display: flex;
+        gap: 15px;
+      }
+      .btn {
+        background: #1e4620;
+        color: white;
+        border: 2px solid #ffffff;
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 30px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- UI Interaction Overlay Container -->
+    <div class="ar-ui-container">
+      <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
+    </div>
+
+    <!-- 8th Wall Enabled WebAR Scene Initialization -->
+    <a-scene xrweb xrextras-gesture-detector xrextras-loading>
+      
+      <!-- Preloaded 3D GLTF/GLB Asset Containers -->
+      <a-assets>
+        <a-asset-item id="tiger-model" src="https://jsdelivr.net"></a-asset-item>
+      </a-assets>
+
+      <!-- Active Viewport Perspective Rig -->
+      <a-camera id="camera" position="0 1.6 0"></a-camera>
+
+      <!-- Surface SLAM Tracking Group -->
+      
+        
+        
+      
+
+      <!-- Ambient and Directional Dynamic Scene Illumination -->
+      
+      
+
+    </a-scene>
+
+    <script>
+      // Runtime handling execution logic for structural asset model swap requests
+      function spawnAnimal(type) {
+        const entity = document.getElementById('active-wildlife');
+        if (type === 'tiger') {
+          entity.setAttribute('gltf-model', '#tiger-model');
+        }
+      }
+    </script>
+  </body>
+</html>
