@@ -54,12 +54,6 @@ const makeDefaultHtmlLoader = () => ({
       sources: {
         list: [
           '...',
-          {
-            tag: 'script',
-            attribute: 'src',
-            type: 'src',
-            filter: () => false,
-          },
           ...ATTRIBUTES_TO_EXPAND.map(attr => ({
             tag: '*',
             attribute: attr,
@@ -82,7 +76,7 @@ const config = {
     new HtmlWebpackPlugin({
       template: path.join(srcPath, 'index.html'),
       filename: 'index.html',
-      inject: false,
+      inject: 'head', // FIX: Safely injects bundle scripts inside head container
     }),
     new CopyWebpackPlugin({
       patterns: [
