@@ -3,22 +3,22 @@
   <head>
     <meta charset="utf-8">
     <title>Park Wildlife AR Zone</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     
-    <!-- Core A-Frame framework -->
+    <!-- Core Stable A-Frame framework -->
     <script src="https://aframe.io"></script>
     
-    <!-- FIXED: Official Niantic Web Engine distribution scripts -->
-    <script src="https://8thwall.com"></script>
-    <script src="https://8thwall.com"></script>
+    <!-- Open-Source Native Camera AR Engine Library -->
+    <script src="https://githack.com"></script>
 
     <style>
-      /* Quick UI Styling for the capture layout */
+      /* Quick UI Styling for the interaction layout */
       .ar-ui-container {
         position: absolute;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 999;
+        z-index: 9999;
         display: flex;
         gap: 15px;
       }
@@ -31,6 +31,12 @@
         font-weight: bold;
         border-radius: 30px;
         cursor: pointer;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+      }
+      /* Clean browser body settings for streaming canvas frames */
+      body {
+        margin: 0;
+        overflow: hidden;
       }
     </style>
   </head>
@@ -41,25 +47,21 @@
       <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
     </div>
 
-    <!-- 8th Wall Enabled WebAR Scene Initialization -->
+    <!-- Initialize Open Camera Tracking Component Setup -->
     <a-scene 
-      xrweb="allowedDevices: any" 
-      xrextras-gesture-detector 
-      xrextras-loading>
+      embedded 
+      arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
       
       <!-- Preloaded 3D GLTF/GLB Asset Containers -->
       <a-assets>
         <a-asset-item id="tiger-model" src="https://jsdelivr.net"></a-asset-item>
       </a-assets>
 
-      <!-- Active Viewport Perspective Rig -->
-      <a-camera id="camera" position="0 1.6 0"></a-camera>
-
-      <!-- Surface SLAM Tracking Group -->
-      
+      <!-- Active Viewport Perspective Rig tracking the environment video feed -->
+      <a-marker-camera preset="hiro">
         
         
-      
+      </a-marker-camera>
 
       <!-- Ambient and Directional Dynamic Scene Illumination -->
       
@@ -68,7 +70,7 @@
     </a-scene>
 
     <script>
-      // Smooth Wildlife spawn execution logic
+      // Safe execution logic for model swap requests
       window.spawnAnimal = function(type) {
         const entity = document.getElementById('active-wildlife');
         if (entity && type === 'tiger') {
@@ -76,12 +78,6 @@
           console.log("Bengal Tiger model applied successfully!");
         }
       };
-
-      // Ensure scripts are fully linked on document load
-      window.addEventListener('load', () => {
-        console.log("App ready. Launching official Niantic XR Engine tracking.");
-        setTimeout(() => window.spawnAnimal('tiger'), 1500);
-      });
     </script>
   </body>
 </html>
