@@ -7,11 +7,9 @@
     <!-- Core A-Frame framework -->
     <script src="https://aframe.io"></script>
     
-    <!-- 8th Wall Open-Source WebAR Engine Library -->
-    <script src="https://8thwall.org"></script>
-
-    <!-- 8th Wall Extras Component System -->
-    <script src="https://8thwall.org"></script>
+    <!-- FIXED: Official Niantic Web Engine distribution scripts -->
+    <script src="https://8thwall.com"></script>
+    <script src="https://8thwall.com"></script>
 
     <style>
       /* Quick UI Styling for the capture layout */
@@ -43,12 +41,11 @@
       <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
     </div>
 
-    <!-- FIXED: Added empty key validation string inside xrweb parameter -->
+    <!-- 8th Wall Enabled WebAR Scene Initialization -->
     <a-scene 
-      xrweb="allowedDevices: any; appKey: empty;" 
+      xrweb="allowedDevices: any" 
       xrextras-gesture-detector 
-      xrextras-loading
-      component-listener>
+      xrextras-loading>
       
       <!-- Preloaded 3D GLTF/GLB Asset Containers -->
       <a-assets>
@@ -71,7 +68,7 @@
     </a-scene>
 
     <script>
-      // Force direct execution logic for structural asset model swap requests
+      // Smooth Wildlife spawn execution logic
       window.spawnAnimal = function(type) {
         const entity = document.getElementById('active-wildlife');
         if (entity && type === 'tiger') {
@@ -80,19 +77,10 @@
         }
       };
 
-      // Force 8th wall video canvas request manually on screen load
+      // Ensure scripts are fully linked on document load
       window.addEventListener('load', () => {
-        const sceneEl = document.querySelector('a-scene');
-        if (sceneEl) {
-          console.log("A-Scene found. Forcing 8th Wall component initialization.");
-          
-          // Request camera initialization parameters manually from engine tree
-          if (window.XR8) {
-            window.XR8.run({canvas: document.getElementById('camera')});
-          }
-          
-          setTimeout(() => window.spawnAnimal('tiger'), 1000);
-        }
+        console.log("App ready. Launching official Niantic XR Engine tracking.");
+        setTimeout(() => window.spawnAnimal('tiger'), 1500);
       });
     </script>
   </body>
