@@ -5,7 +5,7 @@
     <title>Park Wildlife AR Zone</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     
-    <!-- CERTIFIED HTTPS PAIRING: Certified by unpkg to bypass all CORB blocking scripts -->
+    <!-- Stable Framework Configuration via unpkg -->
     <script src="https://aframe.io"></script>
     <script src="https://unpkg.com"></script>
 
@@ -38,35 +38,35 @@
   </head>
   <body>
 
-    <!-- UI Interaction Overlay Container -->
+    <!-- UI Button Layer -->
     <div class="ar-ui-container">
       <button class="btn" onclick="spawnAnimal('tiger')">Bengal Tiger</button>
     </div>
 
-    <!-- Initialize Camera View Tracking System -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+    <!-- FIXED: Explicitly forcing standard tracking systems inside scene mapping tags -->
+    <a-scene 
+      embedded 
+      arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
+      vr-mode-ui="enabled: false">
       
-      <!-- Preloaded 3D GLTF/GLB Asset Containers -->
       <a-assets>
         <a-asset-item id="tiger-model" src="https://jsdelivr.net"></a-asset-item>
       </a-assets>
 
-      <!-- Anchored 3D Scene Node positioned directly in front of user's field of view -->
+      <!-- Placed straight ahead relative to base coordinate map spaces -->
       
-        
-      
-
-      <!-- Explicit camera rigging forced into tracking scene framework -->
+        <!-- Asset injection target -->
       
 
-      <!-- Lighting Layers -->
+      <!-- Forced Video Perspective Anchor Frame -->
+      
+
       
       
 
     </a-scene>
 
     <script>
-      // Safe execution logic for model swap requests
       window.spawnAnimal = function(type) {
         const entity = document.getElementById('active-wildlife');
         if (entity && type === 'tiger') {
@@ -75,9 +75,9 @@
         }
       };
       
-      // Auto-trigger the asset setup on window completion
+      // Auto-trigger the model loading cleanly once elements resolve
       window.addEventListener('load', () => {
-        setTimeout(() => window.spawnAnimal('tiger'), 800);
+        setTimeout(() => window.spawnAnimal('tiger'), 500);
       });
     </script>
   </body>
