@@ -71,21 +71,24 @@
     </a-scene>
 
     <script>
-      // Safe execution logic for model swap requests
+      // Force direct execution logic for structural asset model swap requests
       window.spawnAnimal = function(type) {
         const entity = document.getElementById('active-wildlife');
-        
-        // Safety check to ensure A-Frame scene is ready
-        if (!entity) {
-          console.warn("AR Wildlife Entity is still loading inside the 3D scene... please try again in a moment.");
-          return;
-        }
-
-        if (type === 'tiger') {
+        if (entity && type === 'tiger') {
           entity.setAttribute('gltf-model', '#tiger-model');
           console.log("Bengal Tiger model applied successfully!");
         }
-      }
+      };
+
+      // Automatically attempt to register the scene elements the moment the window loads
+      window.addEventListener('load', () => {
+        const sceneEl = document.querySelector('a-scene');
+        if (sceneEl) {
+          console.log("A-Scene found. Forcing 8th Wall component initialization.");
+          // Trigger the model loading manually without waiting for a tracking loop callback
+          setTimeout(() => window.spawnAnimal('tiger'), 1000);
+        }
+      });
     </script>
   </body>
 </html>
