@@ -76,7 +76,7 @@ const config = {
     new HtmlWebpackPlugin({
       template: path.join(srcPath, 'index.html'),
       filename: 'index.html',
-      inject: 'head', // FIX: Safely injects bundle scripts inside head container
+      inject: 'body', // FIXED: Injects bundle at the bottom of <body> so CDN scripts load first
     }),
     new CopyWebpackPlugin({
       patterns: [
