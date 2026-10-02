@@ -182,16 +182,17 @@
     </a-assets>
 
     <!-- Scene Lighting -->
-    <a-light type="ambient" intensity="1.5"></a-light>
-    <a-light type="directional" position="0 10 5" intensity="1"></a-light>
+    <a-light type="ambient" intensity="1.8"></a-light>
+    <a-light type="directional" position="0 10 5" intensity="1.2"></a-light>
 
     <!-- Camera Anchored Viewport -->
     <a-entity id="main-camera" camera look-controls>
+      <!-- Corrected scale, position, and orientation -->
       <a-entity 
         id="active-animal" 
-        position="0 -0.8 -2.5" 
-        rotation="0 180 0" 
-        scale="1 1 1">
+        position="0 -0.6 -1.8" 
+        rotation="0 0 0" 
+        scale="0.25 0.25 0.25">
       </a-entity>
     </a-entity>
   </a-scene>
@@ -205,10 +206,14 @@
       if (entity) {
         if (selected === 'elephant') {
           entity.setAttribute('gltf-model', '#elephant-model');
-          entity.setAttribute('scale', '0.5 0.5 0.5');
+          entity.setAttribute('scale', '0.15 0.15 0.15');
+          entity.setAttribute('rotation', '0 0 0');
+          entity.setAttribute('position', '0 -0.6 -2.0');
         } else {
           entity.setAttribute('gltf-model', '#tiger-model');
-          entity.setAttribute('scale', '1 1 1');
+          entity.setAttribute('scale', '0.25 0.25 0.25');
+          entity.setAttribute('rotation', '0 0 0');
+          entity.setAttribute('position', '0 -0.6 -1.8');
         }
       }
 
@@ -221,21 +226,19 @@
     function goHome() {
       const entity = document.getElementById('active-animal');
       if (entity) {
-        entity.removeAttribute('gltf-model'); // Unload active 3D asset
+        entity.removeAttribute('gltf-model');
       }
 
-      // Stop active video recording if running
       if (isRecording) {
         toggleVideoRecord();
       }
 
-      // Show Home Screen & Hide AR Controls
       document.getElementById('landing-screen').style.display = 'flex';
       document.getElementById('ar-ui').style.display = 'none';
       document.getElementById('watermark').style.display = 'none';
     }
 
-    // Camera Switch Logic (Front / Rear)
+    // Camera Switch Logic
     let facingMode = 'environment';
     async function toggleCamera() {
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
