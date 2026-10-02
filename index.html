@@ -5,9 +5,10 @@
   <title>TZP Wildlife AR Zone</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  <!-- Production A-Frame and AR.js Core Libraries -->
+  <!-- Production A-Frame, AR.js, and Animation Libraries -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
   <style>
     body {
@@ -17,13 +18,10 @@
       background-color: #000;
     }
 
-    /* Landing Overlay Screen */
+    /* Landing Screen */
     #landing-screen {
       position: fixed;
-      top: 0; 
-      left: 0; 
-      width: 100vw; 
-      height: 100vh;
+      top: 0; left: 0; width: 100vw; height: 100vh;
       background: #121212;
       z-index: 10000;
       display: flex;
@@ -74,7 +72,7 @@
       box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
     }
 
-    /* Watermark - Top Left */
+    /* Watermark */
     #watermark {
       display: none;
       position: fixed;
@@ -84,7 +82,6 @@
       color: #00ff88;
       font-weight: bold;
       font-size: 16px;
-      letter-spacing: 0.5px;
       background: rgba(0, 0, 0, 0.6);
       padding: 8px 14px;
       border-radius: 8px;
@@ -92,7 +89,7 @@
       pointer-events: none;
     }
 
-    /* In-AR Navigation UI Controls */
+    /* AR UI Controls */
     #ar-ui {
       display: none;
       position: fixed;
@@ -123,7 +120,6 @@
       font-weight: 600;
       border-radius: 20px;
       cursor: pointer;
-      backdrop-filter: blur(4px);
     }
 
     .btn-action {
@@ -140,21 +136,21 @@
 </head>
 <body>
 
-  <!-- Landing Overlay Screen -->
+  <!-- Landing Screen -->
   <div id="landing-screen">
     <div class="title">TZP WILDLIFE AR ZONE</div>
     <div class="select-label">Select an Animal Experience:</div>
     <select id="animal-select" class="btn-select">
-      <option value="tiger">Bengal Tiger</option>
-      <option value="elephant">Asian Elephant</option>
+      <option value="tiger_anim">Bengal Tiger (Walking 🐾)</option>
+      <option value="elephant_anim">Asian Elephant (Walking 🐘)</option>
+      <option value="tiger">Bengal Tiger (Static 🐅)</option>
+      <option value="elephant">Asian Elephant (Static 🐘)</option>
     </select>
     <button class="btn-launch" id="launch-btn">Launch AR Camera</button>
   </div>
 
-  <!-- Watermark -->
   <div id="watermark">TZP WILDLIFE AR</div>
 
-  <!-- In-AR Controls -->
   <div id="ar-ui">
     <div class="control-row">
       <button class="ar-btn btn-home" onclick="goHome()">Home 🏠</button>
@@ -166,149 +162,134 @@
     </div>
   </div>
 
-  <!-- A-Frame AR Scene -->
-  <a-scene 
-    embedded 
-    arjs="sourceType: webcam; debugUIEnabled: false;" 
-    vr-mode-ui="enabled: false">
-    
-    <!-- Scene Lighting -->
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
     <a-light type="ambient" intensity="2.5"></a-light>
     <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
-    <!-- Camera Viewport -->
     <a-entity camera look-controls></a-entity>
-
-    <!-- 3D Animal Entity in World Space -->
     <a-entity id="active-animal"></a-entity>
   </a-scene>
 
   <script>
-  // Launch Trigger Action
-  document.getElementById('launch-btn').addEventListener('click', function() {
-    const selected = document.getElementById('animal-select').value;
-    const entity = document.getElementById('active-animal');
+    document.getElementById('launch-btn').addEventListener('click', function() {
+      const selected = document.getElementById('animal-select').value;
+      const entity = document.getElementById('active-animal');
 
-    if (entity) {
-      entity.removeAttribute('gltf-model');
+      if (entity) {
+        entity.removeAttribute('gltf-model');
+        entity.removeAttribute('animation-mixer');
 
-      if (selected === 'elephant') {
-        entity.setAttribute('gltf-model', 'https://raw.githack.com/KhronosGroup/glTF-Sample-Models/main/2.0/AfricanElephant/glTF-Binary/AfricanElephant.glb');
-        entity.setAttribute('scale', '0.003 0.003 0.003');
-        entity.setAttribute('rotation', '0 180 0');
-        entity.setAttribute('position', '0 -1.5 -2.5');
-      } else {
-        // Loads Tiger flat on all 4 paws at floor level
-        entity.setAttribute('gltf-model', 'assets/tiger.glb');
-        entity.setAttribute('scale', '0.4 0.4 0.4');
-        // -90 Pitch rotates the tiger down horizontally; 180 Yaw faces camera
-        entity.setAttribute('rotation', '-90 180 0');
-        // -1.6 Y-position lowers it down to the floor
-        entity.setAttribute('position', '0 -1.6 -2.2');
+        if (selected.includes('elephant')) {
+          entity.setAttribute('gltf-model', `assets/${selected}.glb`);
+          entity.setAttribute('scale', '0.5 0.5 0.5');
+          entity.setAttribute('rotation', '0 180 0');
+          entity.setAttribute('position', '0 -1.2 -2.5');
+        } else {
+          entity.setAttribute('gltf-model', `assets/${selected}.glb`);
+          entity.setAttribute('scale', '0.5 0.5 0.5');
+          entity.setAttribute('rotation', '0 180 0');
+          entity.setAttribute('position', '0 -1.2 -2.2');
+        }
+
+        // Enable animation loop if model is rigged
+        if (selected.includes('anim')) {
+          entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
+        }
+      }
+
+      document.getElementById('landing-screen').style.display = 'none';
+      document.getElementById('ar-ui').style.display = 'flex';
+      document.getElementById('watermark').style.display = 'block';
+    });
+
+    function goHome() {
+      const entity = document.getElementById('active-animal');
+      if (entity) {
+        entity.removeAttribute('gltf-model');
+        entity.removeAttribute('animation-mixer');
+      }
+      if (isRecording) toggleVideoRecord();
+
+      document.getElementById('landing-screen').style.display = 'flex';
+      document.getElementById('ar-ui').style.display = 'none';
+      document.getElementById('watermark').style.display = 'none';
+    }
+
+    let facingMode = 'environment';
+    async function toggleCamera() {
+      facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+      const video = document.querySelector('video');
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+        if (video) video.srcObject = stream;
+      } catch (err) {
+        console.error("Camera switch error:", err);
       }
     }
 
-    document.getElementById('landing-screen').style.display = 'none';
-    document.getElementById('ar-ui').style.display = 'flex';
-    document.getElementById('watermark').style.display = 'block';
-  });
+    function takeSnapshot() {
+      const sceneEl = document.querySelector('a-scene');
+      const videoEl = document.querySelector('video');
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
 
-  // Home Screen Trigger
-  function goHome() {
-    const entity = document.getElementById('active-animal');
-    if (entity) {
-      entity.removeAttribute('gltf-model');
+      if (videoEl) ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const arCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+      ctx.drawImage(arCanvas, 0, 0, canvas.width, canvas.height);
+
+      ctx.font = 'bold 22px Arial';
+      ctx.fillStyle = '#00ff88';
+      ctx.fillText('TZP WILDLIFE AR', 30, 50);
+
+      const link = document.createElement('a');
+      link.download = `TZP-AR-Photo-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
     }
 
-    if (isRecording) {
-      toggleVideoRecord();
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+
+    function toggleVideoRecord() {
+      const recBtn = document.getElementById('rec-btn');
+      const sceneCanvas = document.querySelector('canvas.a-canvas');
+
+      if (!isRecording) {
+        recordedChunks = [];
+        const stream = sceneCanvas.captureStream(30);
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `TZP-AR-Video-${Date.now()}.webm`;
+          link.click();
+        };
+
+        mediaRecorder.start();
+        recBtn.innerText = "Stop Recording ⏹️";
+        recBtn.style.background = "#ff4444";
+        recBtn.style.color = "#ffffff";
+        isRecording = true;
+      } else {
+        mediaRecorder.stop();
+        recBtn.innerText = "Record Video 🎥";
+        recBtn.style.background = "#00ff88";
+        recBtn.style.color = "#05200a";
+        isRecording = false;
+      }
     }
-
-    document.getElementById('landing-screen').style.display = 'flex';
-    document.getElementById('ar-ui').style.display = 'none';
-    document.getElementById('watermark').style.display = 'none';
-  }
-
-  // Camera Switch Logic (Front / Rear)
-  let facingMode = 'environment';
-  async function toggleCamera() {
-    facingMode = (facingMode === 'environment') ? 'user' : 'environment';
-    const video = document.querySelector('video');
-    if (video && video.srcObject) {
-      video.srcObject.getTracks().forEach(track => track.stop());
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-      if (video) video.srcObject = stream;
-    } catch (err) {
-      console.error("Camera switch error:", err);
-    }
-  }
-
-  // Photo Snapshot Logic
-  function takeSnapshot() {
-    const sceneEl = document.querySelector('a-scene');
-    const videoEl = document.querySelector('video');
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const ctx = canvas.getContext('2d');
-
-    if (videoEl) {
-      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    }
-
-    const arCanvas = sceneEl.components.screenshot.getCanvas('perspective');
-    ctx.drawImage(arCanvas, 0, 0, canvas.width, canvas.height);
-
-    ctx.font = 'bold 22px Arial';
-    ctx.fillStyle = '#00ff88';
-    ctx.fillText('TZP WILDLIFE AR', 30, 50);
-
-    const link = document.createElement('a');
-    link.download = `TZP-AR-Photo-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
-
-  // Video Recording Logic
-  let mediaRecorder;
-  let recordedChunks = [];
-  let isRecording = false;
-
-  function toggleVideoRecord() {
-    const recBtn = document.getElementById('rec-btn');
-    const sceneCanvas = document.querySelector('canvas.a-canvas');
-
-    if (!isRecording) {
-      recordedChunks = [];
-      const stream = sceneCanvas.captureStream(30);
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `TZP-AR-Video-${Date.now()}.webm`;
-        link.click();
-      };
-
-      mediaRecorder.start();
-      recBtn.innerText = "Stop Recording ⏹️";
-      recBtn.style.background = "#ff4444";
-      recBtn.style.color = "#ffffff";
-      isRecording = true;
-    } else {
-      mediaRecorder.stop();
-      recBtn.innerText = "Record Video 🎥";
-      recBtn.style.background = "#00ff88";
-      recBtn.style.color = "#05200a";
-      isRecording = false;
-    }
-  }
-</script>
+  </script>
 </body>
 </html>
