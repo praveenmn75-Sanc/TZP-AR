@@ -18,7 +18,7 @@
       background-color: #000;
     }
 
-    /* Landing Screen */
+    /* Landing Screen Overlay */
     #landing-screen {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -176,24 +176,36 @@
       const entity = document.getElementById('active-animal');
 
       if (entity) {
+        // Reset previous components
         entity.removeAttribute('gltf-model');
         entity.removeAttribute('animation-mixer');
 
-        if (selected.includes('elephant')) {
-          entity.setAttribute('gltf-model', `assets/${selected}.glb`);
-          entity.setAttribute('scale', '0.5 0.5 0.5');
-          entity.setAttribute('rotation', '0 180 0');
-          entity.setAttribute('position', '0 -1.2 -2.5');
-        } else {
-          entity.setAttribute('gltf-model', `assets/${selected}.glb`);
-          entity.setAttribute('scale', '0.5 0.5 0.5');
-          entity.setAttribute('rotation', '0 180 0');
-          entity.setAttribute('position', '0 -1.2 -2.2');
-        }
-
-        // Enable animation loop if model is rigged
-        if (selected.includes('anim')) {
+        // Configure Model Source & Transforms
+        if (selected === 'tiger_anim') {
+          entity.setAttribute('gltf-model', 'assets/tiger_anim.glb');
+          entity.setAttribute('scale', '0.4 0.4 0.4');
+          entity.setAttribute('rotation', '0 0 0'); // Facing camera forward
+          entity.setAttribute('position', '0 -1.2 -2.0');
           entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
+        } 
+        else if (selected === 'elephant_anim') {
+          entity.setAttribute('gltf-model', 'assets/elephant_anim.glb');
+          entity.setAttribute('scale', '0.4 0.4 0.4');
+          entity.setAttribute('rotation', '0 0 0'); // Facing camera forward
+          entity.setAttribute('position', '0 -1.2 -2.5');
+          entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
+        } 
+        else if (selected === 'tiger') {
+          entity.setAttribute('gltf-model', 'assets/tiger.glb');
+          entity.setAttribute('scale', '0.4 0.4 0.4');
+          entity.setAttribute('rotation', '0 0 0'); // Fixed: Changed from 0 180 0 to face forward
+          entity.setAttribute('position', '0 -1.2 -2.0');
+        } 
+        else if (selected === 'elephant') {
+          entity.setAttribute('gltf-model', 'assets/elephant.glb');
+          entity.setAttribute('scale', '0.4 0.4 0.4');
+          entity.setAttribute('rotation', '0 0 0'); // Facing camera forward
+          entity.setAttribute('position', '0 -1.2 -2.5');
         }
       }
 
