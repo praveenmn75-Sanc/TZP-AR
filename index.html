@@ -5,7 +5,7 @@
   <title>TZP Wildlife AR Zone</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  <!-- Production A-Frame and AR.js -->
+  <!-- A-Frame & AR.js Libraries -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
@@ -17,13 +17,9 @@
       background-color: #000;
     }
 
-    /* Landing Modal - Z-Index 10000 ensures it overlays all canvas & camera elements */
     #landing-screen {
       position: fixed;
-      top: 0; 
-      left: 0; 
-      width: 100vw; 
-      height: 100vh;
+      top: 0; left: 0; width: 100vw; height: 100vh;
       background: #121212;
       z-index: 10000;
       display: flex;
@@ -40,13 +36,6 @@
       font-weight: 700;
       margin-bottom: 20px;
       color: #00ff88;
-      letter-spacing: 1px;
-    }
-
-    .select-label {
-      font-size: 14px;
-      margin-bottom: 10px;
-      color: #ccc;
     }
 
     select.btn-select {
@@ -71,12 +60,10 @@
       font-weight: bold;
       border-radius: 30px;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
     }
 
-    /* Watermark - Top Left Overlay */
     #watermark {
-      display: none; /* Hidden until launch */
+      display: none;
       position: fixed;
       top: 20px;
       left: 20px;
@@ -84,7 +71,6 @@
       color: #00ff88;
       font-weight: bold;
       font-size: 16px;
-      letter-spacing: 0.5px;
       background: rgba(0, 0, 0, 0.6);
       padding: 8px 14px;
       border-radius: 8px;
@@ -92,7 +78,6 @@
       pointer-events: none;
     }
 
-    /* In-AR Navigation UI - Hidden until launch */
     #ar-ui {
       display: none;
       position: fixed;
@@ -123,7 +108,6 @@
       font-weight: 600;
       border-radius: 20px;
       cursor: pointer;
-      backdrop-filter: blur(4px);
     }
 
     .btn-action {
@@ -131,31 +115,23 @@
       color: #05200a;
       border: none;
     }
-
-    #arjs-video {
-      object-fit: cover !important;
-    }
   </style>
 </head>
 <body>
 
-  <!-- 1. Landing Overlay Screen -->
+  <!-- Landing Screen -->
   <div id="landing-screen">
     <div class="title">TZP WILDLIFE AR ZONE</div>
-    <div class="select-label">Select an Animal Experience:</div>
     <select id="animal-select" class="btn-select">
       <option value="tiger">Bengal Tiger</option>
-      <option value="bear">Sloth Bear</option>
-      <option value="leopard">Leopard</option>
-      <option value="deer">Spotted Deer</option>
     </select>
     <button class="btn-launch" id="launch-btn">Launch AR Camera</button>
   </div>
 
-  <!-- 2. Watermark -->
+  <!-- Watermark -->
   <div id="watermark">TZP WILDLIFE AR</div>
 
-  <!-- 3. In-AR Controls -->
+  <!-- AR UI Overlay -->
   <div id="ar-ui">
     <div class="control-row">
       <button class="ar-btn" onclick="toggleCamera()">Flip Cam 🔄</button>
@@ -166,46 +142,45 @@
     </div>
   </div>
 
-  <!-- 4. A-Frame AR Scene -->
+  <!-- AR Scene -->
   <a-scene 
     embedded 
     arjs="sourceType: webcam; debugUIEnabled: false;" 
     vr-mode-ui="enabled: false">
     
     <a-assets>
+      <!-- Relative path to model in repository -->
       <a-asset-item id="tiger-model" src="assets/tiger.glb"></a-asset-item>
-      <a-asset-item id="bear-model" src="assets/bear.glb"></a-asset-item>
-      <a-asset-item id="leopard-model" src="assets/leopard.glb"></a-asset-item>
-      <a-asset-item id="deer-model" src="assets/deer.glb"></a-asset-item>
     </a-assets>
 
-    <a-entity camera></a-entity>
+    <!-- Scene Lighting (Fixes pitch black model issue) -->
+    <a-light type="ambient" intensity="1.5"></a-light>
+    <a-light type="directional" position="0 10 5" intensity="1"></a-light>
 
-    <a-entity 
-      id="active-animal" 
-      position="0 -0.5 -2" 
-      scale="0.01 0.01 0.01">
+    <!-- Camera setup -->
+    <a-entity id="main-camera" camera look-controls>
+      <!-- Animal model positioned relative to camera viewport so it shows in selfies -->
+      <a-entity 
+        id="active-animal" 
+        position="0 -0.8 -2.5" 
+        rotation="0 180 0" 
+        scale="1 1 1">
+      </a-entity>
     </a-entity>
   </a-scene>
 
   <script>
-    // Launch Trigger Action
     document.getElementById('launch-btn').addEventListener('click', function() {
-      const selected = document.getElementById('animal-select').value;
       const entity = document.getElementById('active-animal');
-
-      // Bind corresponding .glb asset from assets folder
       if (entity) {
-        entity.setAttribute('gltf-model', `#${selected}-model`);
+        entity.setAttribute('gltf-model', '#tiger-model');
       }
 
-      // Toggle UI layers cleanly
       document.getElementById('landing-screen').style.display = 'none';
       document.getElementById('ar-ui').style.display = 'flex';
       document.getElementById('watermark').style.display = 'block';
     });
 
-    // Camera Switch Logic (Front / Rear)
     let facingMode = 'environment';
     async function toggleCamera() {
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
@@ -221,7 +196,6 @@
       }
     }
 
-    // Photo Snapshot with Canvas Composite
     function takeSnapshot() {
       const sceneEl = document.querySelector('a-scene');
       const videoEl = document.querySelector('video');
@@ -231,28 +205,23 @@
       canvas.height = window.innerHeight;
       const ctx = canvas.getContext('2d');
 
-      // Draw camera background
       if (videoEl) {
         ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
       }
 
-      // Draw AR WebGL scene on top
       const arCanvas = sceneEl.components.screenshot.getCanvas('perspective');
       ctx.drawImage(arCanvas, 0, 0, canvas.width, canvas.height);
 
-      // Render TZP Watermark
       ctx.font = 'bold 22px Arial';
       ctx.fillStyle = '#00ff88';
       ctx.fillText('TZP WILDLIFE AR', 30, 50);
 
-      // Trigger image download
       const link = document.createElement('a');
       link.download = `TZP-AR-Photo-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
 
-    // Video Recording Logic
     let mediaRecorder;
     let recordedChunks = [];
     let isRecording = false;
