@@ -124,6 +124,7 @@
     <div class="title">TZP WILDLIFE AR ZONE</div>
     <select id="animal-select" class="btn-select">
       <option value="tiger">Bengal Tiger</option>
+      <option value="elephant">Asian Elephant</option>
     </select>
     <button class="btn-launch" id="launch-btn">Launch AR Camera</button>
   </div>
@@ -149,17 +150,16 @@
     vr-mode-ui="enabled: false">
     
     <a-assets>
-      <!-- Relative path to model in repository -->
       <a-asset-item id="tiger-model" src="assets/tiger.glb"></a-asset-item>
+      <a-asset-item id="elephant-model" src="assets/elephant.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Scene Lighting (Fixes pitch black model issue) -->
+    <!-- Scene Lighting -->
     <a-light type="ambient" intensity="1.5"></a-light>
     <a-light type="directional" position="0 10 5" intensity="1"></a-light>
 
-    <!-- Camera setup -->
+    <!-- Camera Anchored Viewport -->
     <a-entity id="main-camera" camera look-controls>
-      <!-- Animal model positioned relative to camera viewport so it shows in selfies -->
       <a-entity 
         id="active-animal" 
         position="0 -0.8 -2.5" 
@@ -171,9 +171,18 @@
 
   <script>
     document.getElementById('launch-btn').addEventListener('click', function() {
+      const selected = document.getElementById('animal-select').value;
       const entity = document.getElementById('active-animal');
+      
       if (entity) {
-        entity.setAttribute('gltf-model', '#tiger-model');
+        // Bind selected GLB model and adjust scale dynamically
+        if (selected === 'elephant') {
+          entity.setAttribute('gltf-model', '#elephant-model');
+          entity.setAttribute('scale', '0.5 0.5 0.5'); // Adjusted scale for larger models
+        } else {
+          entity.setAttribute('gltf-model', '#tiger-model');
+          entity.setAttribute('scale', '1 1 1');
+        }
       }
 
       document.getElementById('landing-screen').style.display = 'none';
