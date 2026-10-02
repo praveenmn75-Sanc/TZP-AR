@@ -172,39 +172,47 @@
     arjs="sourceType: webcam; debugUIEnabled: false;" 
     vr-mode-ui="enabled: false">
     
-    <a-assets timeout="10000">
-      <a-asset-item id="tiger-model" src="assets/tiger.glb"></a-asset-item>
-      <a-asset-item id="elephant-model" src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@main/2.0/AfricanElephant/glTF-Binary/AfricanElephant.glb"></a-asset-item>
-    </a-assets>
+    <!-- Direct Scene Lighting -->
+    <a-light type="ambient" intensity="2.5"></a-light>
+    <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
-    <!-- Ambient & Directional Lighting for full 3D texture clarity -->
-    <a-light type="ambient" intensity="2.0"></a-light>
-    <a-light type="directional" position="1 4 2" intensity="1.5"></a-light>
+    <!-- Camera Viewport -->
+    <a-entity camera look-controls></a-entity>
 
-    <!-- Camera Anchored Viewport -->
-    <a-entity id="main-camera" camera look-controls>
-      <a-entity id="active-animal"></a-entity>
+    <!-- 3D Animal Entity Placed Directly in World Scene Space -->
+    <a-entity 
+      id="active-animal" 
+      position="0 -0.8 -2.5" 
+      rotation="0 0 0" 
+      scale="0.5 0.5 0.5">
     </a-entity>
   </a-scene>
 
   <script>
+    // Reliable CORS-enabled model URLs
+    const MODELS = {
+      tiger: 'assets/tiger.glb',
+      elephant: 'https://raw.githack.com/KhronosGroup/glTF-Sample-Models/main/2.0/AfricanElephant/glTF-Binary/AfricanElephant.glb'
+    };
+
     // Launch Trigger Action
     document.getElementById('launch-btn').addEventListener('click', function() {
       const selected = document.getElementById('animal-select').value;
       const entity = document.getElementById('active-animal');
 
       if (entity) {
+        // Clear previous model attribute
+        entity.removeAttribute('gltf-model');
+
         if (selected === 'elephant') {
-          entity.removeAttribute('gltf-model');
-          entity.setAttribute('gltf-model', 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@main/2.0/AfricanElephant/glTF-Binary/AfricanElephant.glb');
+          entity.setAttribute('gltf-model', MODELS.elephant);
           entity.setAttribute('scale', '0.005 0.005 0.005');
           entity.setAttribute('rotation', '0 180 0');
-          entity.setAttribute('position', '0 -1.0 -2.5');
+          entity.setAttribute('position', '0 -0.8 -2.5');
         } else {
-          entity.removeAttribute('gltf-model');
-          entity.setAttribute('gltf-model', 'assets/tiger.glb');
+          entity.setAttribute('gltf-model', MODELS.tiger);
           entity.setAttribute('scale', '0.6 0.6 0.6');
-          // Corrects 90-degree tilt and aligns head toward camera
+          // -90deg Pitch flattens tiger on paws; 180deg Yaw turns head forward
           entity.setAttribute('rotation', '-90 180 0');
           entity.setAttribute('position', '0 -1.0 -2.2');
         }
