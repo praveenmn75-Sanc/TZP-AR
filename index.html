@@ -5,7 +5,7 @@
   <title>TZP Wildlife AR Zone</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  <!-- A-Frame & AR.js Libraries -->
+  <!-- Production A-Frame and AR.js -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
@@ -17,9 +17,13 @@
       background-color: #000;
     }
 
+    /* Landing Overlay Screen */
     #landing-screen {
       position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
+      top: 0; 
+      left: 0; 
+      width: 100vw; 
+      height: 100vh;
       background: #121212;
       z-index: 10000;
       display: flex;
@@ -36,6 +40,13 @@
       font-weight: 700;
       margin-bottom: 20px;
       color: #00ff88;
+      letter-spacing: 1px;
+    }
+
+    .select-label {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #ccc;
     }
 
     select.btn-select {
@@ -60,8 +71,10 @@
       font-weight: bold;
       border-radius: 30px;
       cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
     }
 
+    /* Watermark - Top Left */
     #watermark {
       display: none;
       position: fixed;
@@ -71,6 +84,7 @@
       color: #00ff88;
       font-weight: bold;
       font-size: 16px;
+      letter-spacing: 0.5px;
       background: rgba(0, 0, 0, 0.6);
       padding: 8px 14px;
       border-radius: 8px;
@@ -78,6 +92,7 @@
       pointer-events: none;
     }
 
+    /* In-AR Navigation UI Controls */
     #ar-ui {
       display: none;
       position: fixed;
@@ -108,6 +123,7 @@
       font-weight: 600;
       border-radius: 20px;
       cursor: pointer;
+      backdrop-filter: blur(4px);
     }
 
     .btn-action {
@@ -115,13 +131,23 @@
       color: #05200a;
       border: none;
     }
+
+    .btn-home {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    #arjs-video {
+      object-fit: cover !important;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Landing Screen -->
+  <!-- Landing Overlay Screen -->
   <div id="landing-screen">
     <div class="title">TZP WILDLIFE AR ZONE</div>
+    <div class="select-label">Select an Animal Experience:</div>
     <select id="animal-select" class="btn-select">
       <option value="tiger">Bengal Tiger</option>
       <option value="elephant">Asian Elephant</option>
@@ -132,9 +158,10 @@
   <!-- Watermark -->
   <div id="watermark">TZP WILDLIFE AR</div>
 
-  <!-- AR UI Overlay -->
+  <!-- In-AR Controls -->
   <div id="ar-ui">
     <div class="control-row">
+      <button class="ar-btn btn-home" onclick="goHome()">Home 🏠</button>
       <button class="ar-btn" onclick="toggleCamera()">Flip Cam 🔄</button>
     </div>
     <div class="control-row">
@@ -143,7 +170,7 @@
     </div>
   </div>
 
-  <!-- AR Scene -->
+  <!-- A-Frame AR Scene -->
   <a-scene 
     embedded 
     arjs="sourceType: webcam; debugUIEnabled: false;" 
@@ -170,15 +197,15 @@
   </a-scene>
 
   <script>
+    // Launch Trigger Action
     document.getElementById('launch-btn').addEventListener('click', function() {
       const selected = document.getElementById('animal-select').value;
       const entity = document.getElementById('active-animal');
-      
+
       if (entity) {
-        // Bind selected GLB model and adjust scale dynamically
         if (selected === 'elephant') {
           entity.setAttribute('gltf-model', '#elephant-model');
-          entity.setAttribute('scale', '0.5 0.5 0.5'); // Adjusted scale for larger models
+          entity.setAttribute('scale', '0.5 0.5 0.5');
         } else {
           entity.setAttribute('gltf-model', '#tiger-model');
           entity.setAttribute('scale', '1 1 1');
@@ -190,6 +217,25 @@
       document.getElementById('watermark').style.display = 'block';
     });
 
+    // Back to Home Functionality
+    function goHome() {
+      const entity = document.getElementById('active-animal');
+      if (entity) {
+        entity.removeAttribute('gltf-model'); // Unload active 3D asset
+      }
+
+      // Stop active video recording if running
+      if (isRecording) {
+        toggleVideoRecord();
+      }
+
+      // Show Home Screen & Hide AR Controls
+      document.getElementById('landing-screen').style.display = 'flex';
+      document.getElementById('ar-ui').style.display = 'none';
+      document.getElementById('watermark').style.display = 'none';
+    }
+
+    // Camera Switch Logic (Front / Rear)
     let facingMode = 'environment';
     async function toggleCamera() {
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
@@ -205,6 +251,7 @@
       }
     }
 
+    // Photo Snapshot
     function takeSnapshot() {
       const sceneEl = document.querySelector('a-scene');
       const videoEl = document.querySelector('video');
@@ -231,6 +278,7 @@
       link.click();
     }
 
+    // Video Recording Logic
     let mediaRecorder;
     let recordedChunks = [];
     let isRecording = false;
