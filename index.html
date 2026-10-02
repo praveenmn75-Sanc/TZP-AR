@@ -199,28 +199,29 @@
 
   <script>
     // Launch Trigger Action
-    document.getElementById('launch-btn').addEventListener('click', function() {
-      const selected = document.getElementById('animal-select').value;
-      const entity = document.getElementById('active-animal');
+document.getElementById('launch-btn').addEventListener('click', function() {
+  const selected = document.getElementById('animal-select').value;
+  const entity = document.getElementById('active-animal');
 
-      if (entity) {
-        if (selected === 'elephant') {
-          entity.setAttribute('gltf-model', '#elephant-model');
-          entity.setAttribute('scale', '0.15 0.15 0.15');
-          entity.setAttribute('rotation', '0 0 0');
-          entity.setAttribute('position', '0 -0.6 -2.0');
-        } else {
-          entity.setAttribute('gltf-model', '#tiger-model');
-          entity.setAttribute('scale', '0.25 0.25 0.25');
-          entity.setAttribute('rotation', '0 0 0');
-          entity.setAttribute('position', '0 -0.6 -1.8');
-        }
-      }
+  if (entity) {
+    if (selected === 'elephant') {
+      entity.setAttribute('gltf-model', '#elephant-model');
+      entity.setAttribute('scale', '0.15 0.15 0.15');
+      entity.setAttribute('rotation', '0 0 0');
+      entity.setAttribute('position', '0 -0.6 -2.0');
+    } else {
+      entity.setAttribute('gltf-model', '#tiger-model');
+      entity.setAttribute('scale', '0.2 0.2 0.2');
+      // Set Y-axis rotation to 90 degrees so the head faces front
+      entity.setAttribute('rotation', '0 90 0');
+      entity.setAttribute('position', '0 -0.6 -1.8');
+    }
+  }
 
-      document.getElementById('landing-screen').style.display = 'none';
-      document.getElementById('ar-ui').style.display = 'flex';
-      document.getElementById('watermark').style.display = 'block';
-    });
+  document.getElementById('landing-screen').style.display = 'none';
+  document.getElementById('ar-ui').style.display = 'flex';
+  document.getElementById('watermark').style.display = 'block';
+});
 
     // Back to Home Functionality
     function goHome() {
