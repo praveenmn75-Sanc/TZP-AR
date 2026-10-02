@@ -178,50 +178,45 @@
     
     <a-assets>
       <a-asset-item id="tiger-model" src="assets/tiger.glb"></a-asset-item>
-      <a-asset-item id="elephant-model" src="assets/elephant.glb"></a-asset-item>
+      <!-- Remote fallback URL to ensure Elephant renders reliably -->
+      <a-asset-item id="elephant-model" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/AfricanElephant/glTF-Binary/AfricanElephant.glb"></a-asset-item>
     </a-assets>
 
     <!-- Scene Lighting -->
-    <a-light type="ambient" intensity="1.8"></a-light>
-    <a-light type="directional" position="0 10 5" intensity="1.2"></a-light>
+    <a-light type="ambient" intensity="2.0"></a-light>
+    <a-light type="directional" position="0 10 5" intensity="1.5"></a-light>
 
     <!-- Camera Anchored Viewport -->
     <a-entity id="main-camera" camera look-controls>
-      <!-- Corrected scale, position, and orientation -->
-      <a-entity 
-        id="active-animal" 
-        position="0 -0.6 -1.8" 
-        rotation="0 0 0" 
-        scale="0.25 0.25 0.25">
-      </a-entity>
+      <a-entity id="active-animal"></a-entity>
     </a-entity>
   </a-scene>
 
   <script>
     // Launch Trigger Action
-document.getElementById('launch-btn').addEventListener('click', function() {
-  const selected = document.getElementById('animal-select').value;
-  const entity = document.getElementById('active-animal');
+    document.getElementById('launch-btn').addEventListener('click', function() {
+      const selected = document.getElementById('animal-select').value;
+      const entity = document.getElementById('active-animal');
 
-  if (entity) {
-    if (selected === 'elephant') {
-      entity.setAttribute('gltf-model', '#elephant-model');
-      entity.setAttribute('scale', '0.15 0.15 0.15');
-      entity.setAttribute('rotation', '0 0 0');
-      entity.setAttribute('position', '0 -0.6 -2.0');
-    } else {
-      entity.setAttribute('gltf-model', '#tiger-model');
-      entity.setAttribute('scale', '0.2 0.2 0.2');
-      // Set Y-axis rotation to 90 degrees so the head faces front
-      entity.setAttribute('rotation', '0 90 0');
-      entity.setAttribute('position', '0 -0.6 -1.8');
-    }
-  }
+      if (entity) {
+        if (selected === 'elephant') {
+          entity.setAttribute('gltf-model', '#elephant-model');
+          entity.setAttribute('scale', '0.005 0.005 0.005');
+          entity.setAttribute('rotation', '0 180 0');
+          entity.setAttribute('position', '0 -1.0 -2.5');
+        } else {
+          entity.setAttribute('gltf-model', '#tiger-model');
+          entity.setAttribute('scale', '0.8 0.8 0.8');
+          // Corrects 90-degree vertical pitch tilt & aligns head toward camera
+          entity.setAttribute('rotation', '-90 180 0');
+          entity.setAttribute('position', '0 -1.2 -2.5');
+        }
+      }
 
-  document.getElementById('landing-screen').style.display = 'none';
-  document.getElementById('ar-ui').style.display = 'flex';
-  document.getElementById('watermark').style.display = 'block';
-});
+      document.getElementById('landing-screen').style.display = 'none';
+      document.getElementById('ar-ui').style.display = 'flex';
+      document.getElementById('watermark').style.display = 'block';
+    });
 
     // Back to Home Functionality
     function goHome() {
@@ -239,7 +234,7 @@ document.getElementById('launch-btn').addEventListener('click', function() {
       document.getElementById('watermark').style.display = 'none';
     }
 
-    // Camera Switch Logic
+    // Camera Switch Logic (Front / Rear)
     let facingMode = 'environment';
     async function toggleCamera() {
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
