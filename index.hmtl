@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Wildlife Park AR Engine</title>
+    
+    <script src="aframe.min.js"></script>
+    <script src="mindar-image-aframe.prod.js"></script>
+    
+    <style>
+      body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
+      #splash-entry {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: #111; color: #fff; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; z-index: 9999;
+      }
+      .activate-btn {
+        padding: 16px 36px; font-size: 16px; background: #00ffcc; color: #111;
+        border: none; border-radius: 30px; font-weight: bold; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,255,204,0.3); text-transform: uppercase;
+      }
+      #scan-overlay {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4); color: white; display: flex;
+        justify-content: center; align-items: center; z-index: 998;
+        pointer-events: none; display: none; text-shadow: 0 2px 4px #000;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="splash-entry">
+      <h2 style="margin-bottom: 24px; letter-spacing: 1px;">WILDLIFE AR EDGE NODE</h2>
+      <button class="activate-btn" id="start-btn">Launch Camera View</button>
+    </div>
+
+    <div id="scan-overlay">
+      <p>Point device at the physical track marker sign...</p>
+    </div>
+
+    <a-scene id="ar-scene" 
+             mindar-image="imageTargetSrc: assets/targets.mind; autoStart: false; uiScanning: no" 
+             color-space="sRGB" 
+             renderer="colorManagement: true, physicallyCorrectLights: true" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: false">
+             
+      <a-assets>
+        <a-asset-item id="tiger" src="assets/tiger.glb"></a-asset-item>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-light type="ambient" intensity="1.2"></a-light>
+      <a-light type="directional" position="1 2 1" intensity="1.5"></a-light>
+
+      <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
+        <a-gltf-model src="#tiger" position="0 0 0.1" scale="0.6 0.6 0.6" rotation="90 0 0"></a-gltf-model>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const scene = document.getElementById('ar-scene');
+      const startBtn = document.getElementById('start-btn');
+      const splash = document.getElementById('splash-entry');
+      const overlay = document.getElementById('scan-overlay');
+
+      startBtn.addEventListener('click', () => {
+        splash.style.display = 'none';
+        overlay.style.display = 'flex';
+        scene.systems['mindar-image-system'].start(); 
+      });
+
+      scene.addEventListener('loaded', () => {
+        const anchor = document.getElementById('target-anchor');
+        anchor.addEventListener("targetFound", () => { overlay.style.display = "none"; });
+        anchor.addEventListener("targetLost", () => { overlay.style.display = "flex"; });
+      });
+    </script>
+  </body>
+</html>
