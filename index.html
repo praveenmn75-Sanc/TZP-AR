@@ -137,7 +137,7 @@
   </style>
 
   <script>
-    // Custom Native Touch Component for Rotation & Scaling (Bypasses Raycasting)
+    // Custom Touch Engine (Bypasses Raycaster entirely for flawless mobile AR interaction)
     AFRAME.registerComponent('model-controls', {
       init: function () {
         this.pointers = {};
@@ -145,52 +145,54 @@
         this.initialDistance = 0;
 
         window.addEventListener('touchstart', (e) => {
-          if (e.target.closest('.ar-btn') || e.target.closest('#landing-screen')) return;
+          if (e.target.closest('#ar-ui') || e.target.closest('#landing-screen')) return;
+          
           for (let i = 0; i < e.touches.length; i++) {
-            this.pointers[e.touches[i].identifier] = e.touches[i];
+            this.pointers[e.touches[i].identifier] = {
+              x: e.touches[i].clientX,
+              y: e.touches[i].clientY
+            };
           }
           if (Object.keys(this.pointers).length === 2) {
             const keys = Object.keys(this.pointers);
             const p1 = this.pointers[keys[0]];
             const p2 = this.pointers[keys[1]];
-            this.initialDistance = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
-            this.baseScale = this.el.getAttribute('scale').x;
+            this.initialDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            this.baseScale = this.el.getAttribute('scale').x || 0.4;
           }
         }, {passive: false});
 
         window.addEventListener('touchmove', (e) => {
-          if (e.target.closest('.ar-btn') || e.target.closest('#landing-screen')) return;
-          
-          // 1 Finger = Rotate
+          if (e.target.closest('#ar-ui') || e.target.closest('#landing-screen')) return;
+
+          // 1-Finger Rotation
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const oldTouch = this.pointers[touch.identifier];
             if (oldTouch) {
-              const deltaX = touch.clientX - oldTouch.clientX;
-              const rotation = this.el.getAttribute('rotation');
-              this.el.setAttribute('rotation', {
-                x: rotation.x,
-                y: rotation.y + (deltaX * 0.8), // Rotation speed multiplier
-                z: rotation.z
-              });
+              const deltaX = touch.clientX - oldTouch.x;
+              const currentRot = this.el.getAttribute('rotation') || {x: 0, y: 0, z: 0};
+              // Set rotation directly using string format to ensure A-Frame updates
+              this.el.setAttribute('rotation', `${currentRot.x} ${currentRot.y + (deltaX * 0.6)} ${currentRot.z}`);
             }
-            this.pointers[touch.identifier] = touch;
+            this.pointers[touch.identifier] = { x: touch.clientX, y: touch.clientY };
           }
-          // 2 Fingers = Scale
+          // 2-Finger Scale
           else if (e.touches.length === 2) {
             const keys = Object.keys(this.pointers);
             const t1 = Array.from(e.touches).find(t => t.identifier == keys[0]);
             const t2 = Array.from(e.touches).find(t => t.identifier == keys[1]);
-            
+
             if (t1 && t2) {
               const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
               const scaleRatio = currentDist / this.initialDistance;
               let newScale = this.baseScale * scaleRatio;
-              newScale = Math.max(0.05, Math.min(newScale, 5.0)); // Clamp min/max scale
-              this.el.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
+              newScale = Math.max(0.05, Math.min(newScale, 5.0)); // Min/Max scale limit
               
-              this.pointers[t1.identifier] = t1;
-              this.pointers[t2.identifier] = t2;
+              this.el.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
+
+              this.pointers[t1.identifier] = { x: t1.clientX, y: t1.clientY };
+              this.pointers[t2.identifier] = { x: t2.clientX, y: t2.clientY };
             }
           }
         }, {passive: false});
@@ -198,9 +200,6 @@
         window.addEventListener('touchend', (e) => {
           for (let i = 0; i < e.changedTouches.length; i++) {
             delete this.pointers[e.changedTouches[i].identifier];
-          }
-          if (Object.keys(this.pointers).length < 2) {
-            this.baseScale = this.el.getAttribute('scale').x;
           }
         });
       }
@@ -238,7 +237,7 @@
     </div>
   </div>
 
-  <!-- WebAR Scene (No a-assets preloader causing timeouts) -->
+  <!-- Clean WebAR Scene -->
   <a-scene 
     embedded 
     arjs="sourceType: webcam; debugUIEnabled: false;" 
@@ -249,10 +248,14 @@
 
     <a-entity camera look-controls></a-entity>
 
-    <!-- Custom model-controls attribute attached -->
+    <!-- Container that holds the touch engine logic and transforms -->
     <a-entity 
-      id="active-animal"
-      model-controls>
+      id="animal-container" 
+      model-controls 
+      position="0 -1.2 -2.2"
+      scale="0.4 0.4 0.4"
+      rotation="0 0 0">
+      <!-- Models will be injected here dynamically -->
     </a-entity>
   </a-scene>
 
@@ -273,34 +276,32 @@
       }
     }
 
+    // Dynamic Injection Logic to solve model swapping bugs
     document.getElementById('launch-btn').addEventListener('click', function() {
       const selected = document.getElementById('animal-select').value;
-      const entity = document.getElementById('active-animal');
+      const container = document.getElementById('animal-container');
 
-      if (entity) {
-        // Clear old model entirely
-        entity.removeAttribute('gltf-model');
-        entity.removeAttribute('animation-mixer');
+      if (container) {
+        // Completely destroy the old model to force WebGL to load the new one cleanly
+        container.innerHTML = ''; 
+        
+        // Reset container transforms back to default on fresh launch
+        container.setAttribute('scale', '0.4 0.4 0.4');
+        container.setAttribute('rotation', '0 0 0');
 
-        // Allow A-Frame a brief moment to clear cache before assigning the new model directly
-        setTimeout(() => {
-          entity.setAttribute('gltf-model', `url(assets/${selected}.glb)`);
+        // Create a brand new A-Frame entity
+        const newAnimal = document.createElement('a-entity');
+        
+        // Use direct filepath string, no url() wrapping
+        newAnimal.setAttribute('gltf-model', `assets/${selected}.glb`);
+        
+        // Append animation if needed
+        if (selected.includes('anim')) {
+          newAnimal.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
+        }
 
-          if (selected.includes('elephant')) {
-            entity.setAttribute('scale', '0.4 0.4 0.4');
-            entity.setAttribute('rotation', '0 0 0');
-            entity.setAttribute('position', '0 -1.2 -2.5');
-          } else {
-            entity.setAttribute('scale', '0.4 0.4 0.4');
-            entity.setAttribute('rotation', '0 0 0');
-            entity.setAttribute('position', '0 -1.2 -2.0');
-          }
-
-          // Enable rigging animation if animated choice
-          if (selected.includes('anim')) {
-            entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
-          }
-        }, 50);
+        // Add to scene
+        container.appendChild(newAnimal);
       }
 
       document.getElementById('landing-screen').style.display = 'none';
@@ -309,10 +310,9 @@
     });
 
     function goHome() {
-      const entity = document.getElementById('active-animal');
-      if (entity) {
-        entity.removeAttribute('gltf-model');
-        entity.removeAttribute('animation-mixer');
+      const container = document.getElementById('animal-container');
+      if (container) {
+        container.innerHTML = ''; // Clear model from memory when going home
       }
       if (isRecording) toggleVideoRecord();
 
@@ -336,7 +336,7 @@
       }
     }
 
-    // High-Resolution Native Sensor Snapshot with Web Share Integration
+    // High-Resolution Native Sensor Snapshot
     async function takeSnapshot() {
       const videoEl = document.querySelector('video');
       const sceneEl = document.querySelector('a-scene');
