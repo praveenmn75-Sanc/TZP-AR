@@ -19,7 +19,6 @@
       touch-action: none;
     }
 
-    /* Landing Screen Overlay */
     #landing-screen {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -73,24 +72,24 @@
       box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
     }
 
-    /* Loading Indicator */
     #loading-indicator {
       display: none;
       position: fixed;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       color: #00ff88;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       z-index: 9999;
       background: rgba(0, 0, 0, 0.85);
-      padding: 15px 30px;
+      padding: 15px 20px;
       border-radius: 10px;
       border: 1px solid #00ff88;
-      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.2);
+      text-align: center;
+      max-width: 80%;
+      word-wrap: break-word;
     }
 
-    /* Watermark */
     #watermark {
       display: none;
       position: fixed;
@@ -107,7 +106,6 @@
       pointer-events: none;
     }
 
-    /* AR UI Controls */
     #ar-ui {
       display: none;
       position: fixed;
@@ -145,15 +143,9 @@
       color: #05200a;
       border: none;
     }
-
-    .btn-home {
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-    }
   </style>
 
   <script>
-    // Custom Touch Engine with Vertical (Pitch) & Horizontal (Yaw) Rotation
     AFRAME.registerComponent('model-controls', {
       init: function () {
         this.pointers = {};
@@ -162,12 +154,8 @@
 
         window.addEventListener('touchstart', (e) => {
           if (e.target.closest('#ar-ui') || e.target.closest('#landing-screen')) return;
-          
           for (let i = 0; i < e.touches.length; i++) {
-            this.pointers[e.touches[i].identifier] = {
-              x: e.touches[i].clientX,
-              y: e.touches[i].clientY
-            };
+            this.pointers[e.touches[i].identifier] = { x: e.touches[i].clientX, y: e.touches[i].clientY };
           }
           if (Object.keys(this.pointers).length === 2) {
             const keys = Object.keys(this.pointers);
@@ -187,14 +175,14 @@
             const oldTouch = this.pointers[touch.identifier];
             if (oldTouch) {
               const deltaX = touch.clientX - oldTouch.x;
-              const deltaY = touch.clientY - oldTouch.y; // Added vertical tracking
+              const deltaY = touch.clientY - oldTouch.y;
               
               let currentRot = this.el.getAttribute('rotation');
               if (!currentRot) currentRot = {x: 0, y: 0, z: 0};
 
               this.el.setAttribute('rotation', {
-                x: currentRot.x + (deltaY * 0.6), // Dragging up/down tilts vertically
-                y: currentRot.y + (deltaX * 0.6), // Dragging left/right spins horizontally
+                x: currentRot.x + (deltaY * 0.6), 
+                y: currentRot.y + (deltaX * 0.6), 
                 z: currentRot.z
               });
             }
@@ -236,8 +224,8 @@
     <div class="title">TZP WILDLIFE AR ZONE</div>
     <div class="select-label">Select an Animal Experience:</div>
     <select id="animal-select" class="btn-select">
+      <!-- Removed Animated Elephant -->
       <option value="tiger_anim">Bengal Tiger (Walking 🐾)</option>
-      <option value="elephant_anim">Asian Elephant (Walking 🐘)</option>
       <option value="tiger">Bengal Tiger (Static 🐅)</option>
       <option value="elephant">Asian Elephant (Static 🐘)</option>
     </select>
@@ -245,24 +233,20 @@
   </div>
 
   <div id="loading-indicator">Loading 3D Model... ⏳</div>
-
-  <!-- Watermark Overlay -->
   <div id="watermark">TZP WILDLIFE AR</div>
 
-  <!-- AR Control Panel -->
   <div id="ar-ui">
     <div class="control-row">
-      <button class="ar-btn btn-home" onclick="goHome()">Home 🏠</button>
+      <button class="ar-btn" onclick="goHome()" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.4);">Home 🏠</button>
       <button class="ar-btn" onclick="toggleCamera()">Flip Cam 🔄</button>
       <button class="ar-btn" onclick="playSound()">Roar 🔊</button>
     </div>
     <div class="control-row">
       <button class="ar-btn btn-action" onclick="takeSnapshot()">Take Photo 📸</button>
-      <button class="ar-btn btn-action" id="rec-btn" onclick="toggleVideoRecord()">Record Video 🎥</button>
+      <button class="ar-btn btn-action" id="rec-btn" onclick="toggleVideoRecord()" style="background: #00ff88; color: #05200a; border: none;">Record Video 🎥</button>
     </div>
   </div>
 
-  <!-- CRITICAL FIX: Added Meshopt and Draco decoders to support compressed Elephant assets -->
   <a-scene 
     embedded 
     arjs="sourceType: webcam; debugUIEnabled: false;" 
@@ -284,7 +268,6 @@
   </a-scene>
 
   <script>
-    // Audio Resources
     const SOUNDS = {
       tiger: new Audio('https://cdn.freesound.org/previews/512/512132_10825368-lq.mp3'),
       elephant: new Audio('https://cdn.freesound.org/previews/464/464871_9511679-lq.mp3')
@@ -293,7 +276,6 @@
     function playSound() {
       const selected = document.getElementById('animal-select').value;
       const key = selected.includes('elephant') ? 'elephant' : 'tiger';
-      
       if (SOUNDS[key]) {
         SOUNDS[key].currentTime = 0;
         SOUNDS[key].play().catch(e => console.log('Audio permission required:', e));
@@ -305,11 +287,10 @@
       const container = document.getElementById('animal-container');
 
       if (container) {
-        // Show loading text
+        document.getElementById('loading-indicator').innerText = 'Loading 3D Model... ⏳';
         document.getElementById('loading-indicator').style.display = 'block';
         
         container.innerHTML = ''; 
-        
         container.setAttribute('scale', {x: 0.4, y: 0.4, z: 0.4});
         container.setAttribute('rotation', {x: 0, y: 0, z: 0});
 
@@ -320,15 +301,14 @@
           newAnimal.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
         }
 
-        // Hide loading indicator when model successfully loads
         newAnimal.addEventListener('model-loaded', () => {
           document.getElementById('loading-indicator').style.display = 'none';
         });
 
-        // Debugging event in case file path or compression fails
+        // Catch and display exact error if the model fails
         newAnimal.addEventListener('model-error', (err) => {
-          document.getElementById('loading-indicator').innerText = 'Error loading model ❌';
           console.error("A-Frame Model Error: ", err);
+          document.getElementById('loading-indicator').innerText = 'Model Format Error ❌ Check Console';
         });
 
         container.appendChild(newAnimal);
@@ -341,9 +321,7 @@
 
     function goHome() {
       const container = document.getElementById('animal-container');
-      if (container) {
-        container.innerHTML = ''; 
-      }
+      if (container) container.innerHTML = ''; 
       if (isRecording) toggleVideoRecord();
 
       document.getElementById('landing-screen').style.display = 'flex';
@@ -356,9 +334,7 @@
     async function toggleCamera() {
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
       const video = document.querySelector('video');
-      if (video && video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-      }
+      if (video && video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
         if (video) video.srcObject = stream;
@@ -400,7 +376,6 @@
             console.log('Share fallback:', err);
           }
         }
-
         const link = document.createElement('a');
         link.download = file.name;
         link.href = URL.createObjectURL(blob);
