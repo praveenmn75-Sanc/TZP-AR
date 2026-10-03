@@ -141,7 +141,7 @@
 </head>
 <body>
 
-  <!-- Landing Screen -->
+  <!-- Landing Screen Overlay -->
   <div id="landing-screen">
     <div class="title">TZP WILDLIFE AR ZONE</div>
     <div class="select-label">Select an Animal Experience:</div>
@@ -154,8 +154,10 @@
     <button class="btn-launch" id="launch-btn">Launch AR Camera</button>
   </div>
 
+  <!-- Watermark Overlay -->
   <div id="watermark">TZP WILDLIFE AR</div>
 
+  <!-- AR Control Panel -->
   <div id="ar-ui">
     <div class="control-row">
       <button class="ar-btn btn-home" onclick="goHome()">Home 🏠</button>
@@ -168,23 +170,30 @@
     </div>
   </div>
 
-  <!-- Gesture-Enabled WebAR Scene -->
+  <!-- WebAR Scene with Preloaded Asset Cache & Gesture Handlers -->
   <a-scene 
     embedded 
     gesture-detector
     arjs="sourceType: webcam; debugUIEnabled: false;" 
     vr-mode-ui="enabled: false">
-    
+
+    <a-assets timeout="10000">
+      <a-asset-item id="asset-tiger-anim" src="assets/tiger_anim.glb"></a-asset-item>
+      <a-asset-item id="asset-elephant-anim" src="assets/elephant_anim.glb"></a-asset-item>
+      <a-asset-item id="asset-tiger" src="assets/tiger.glb"></a-asset-item>
+      <a-asset-item id="asset-elephant" src="assets/elephant.glb"></a-asset-item>
+    </a-assets>
+
     <a-light type="ambient" intensity="2.5"></a-light>
     <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
     <a-entity camera look-controls></a-entity>
-    
-    <!-- Gesture Interactive Model Anchor -->
+
+    <!-- Interactive Entity with Full Gesture Rotation, Scale, and Positioning Enabled -->
     <a-entity 
       id="active-animal"
       class="cantap"
-      gesture-handler="minScale: 0.1; maxScale: 3.0;">
+      gesture-handler="minScale: 0.05; maxScale: 5.0; rotationFactor: 5;">
     </a-entity>
   </a-scene>
 
@@ -210,34 +219,26 @@
       const entity = document.getElementById('active-animal');
 
       if (entity) {
+        // Reset existing attributes completely
         entity.removeAttribute('gltf-model');
         entity.removeAttribute('animation-mixer');
 
-        if (selected === 'tiger_anim') {
-          entity.setAttribute('gltf-model', 'assets/tiger_anim.glb');
-          entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0');
-          entity.setAttribute('position', '0 -1.2 -2.0');
-          entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
-        } 
-        else if (selected === 'elephant_anim') {
-          entity.setAttribute('gltf-model', 'assets/elephant_anim.glb');
+        // Bind preloaded asset selector IDs
+        entity.setAttribute('gltf-model', `#asset-${selected}`);
+
+        if (selected.includes('elephant')) {
           entity.setAttribute('scale', '0.4 0.4 0.4');
           entity.setAttribute('rotation', '0 0 0');
           entity.setAttribute('position', '0 -1.2 -2.5');
-          entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
-        } 
-        else if (selected === 'tiger') {
-          entity.setAttribute('gltf-model', 'assets/tiger.glb');
+        } else {
           entity.setAttribute('scale', '0.4 0.4 0.4');
           entity.setAttribute('rotation', '0 0 0');
           entity.setAttribute('position', '0 -1.2 -2.0');
-        } 
-        else if (selected === 'elephant') {
-          entity.setAttribute('gltf-model', 'assets/elephant.glb');
-          entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0');
-          entity.setAttribute('position', '0 -1.2 -2.5');
+        }
+
+        // Enable rigging animation if animated choice
+        if (selected.includes('anim')) {
+          entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
         }
       }
 
