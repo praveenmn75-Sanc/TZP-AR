@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>TZP Wildlife AR Zone</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 
   <!-- Production A-Frame, AR.js, and Animation Libraries -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -20,6 +20,7 @@
       overflow: hidden;
       font-family: Arial, sans-serif;
       background-color: #000;
+      touch-action: none; /* Prevents browser pull-to-refresh interfering with 3D scaling */
     }
 
     /* Landing Screen Overlay */
@@ -177,23 +178,26 @@
     arjs="sourceType: webcam; debugUIEnabled: false;" 
     vr-mode-ui="enabled: false">
 
-    <a-assets timeout="10000">
-      <a-asset-item id="asset-tiger-anim" src="assets/tiger_anim.glb"></a-asset-item>
-      <a-asset-item id="asset-elephant-anim" src="assets/elephant_anim.glb"></a-asset-item>
-      <a-asset-item id="asset-tiger" src="assets/tiger.glb"></a-asset-item>
-      <a-asset-item id="asset-elephant" src="assets/elephant.glb"></a-asset-item>
+    <!-- Increased timeout to 60 seconds to ensure 25MB+ GLB files don't fail -->
+    <a-assets timeout="60000">
+      <!-- IDs perfectly match the dropdown values to resolve parsing errors -->
+      <a-asset-item id="tiger_anim" src="assets/tiger_anim.glb"></a-asset-item>
+      <a-asset-item id="elephant_anim" src="assets/elephant_anim.glb"></a-asset-item>
+      <a-asset-item id="tiger" src="assets/tiger.glb"></a-asset-item>
+      <a-asset-item id="elephant" src="assets/elephant.glb"></a-asset-item>
     </a-assets>
 
     <a-light type="ambient" intensity="2.5"></a-light>
     <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
-    <a-entity camera look-controls></a-entity>
+    <!-- CRITICAL FIX: Raycaster and cursor bound to the camera to detect touch intersections on the model -->
+    <a-entity camera look-controls raycaster="objects: .cantap" cursor="fuse: false; rayOrigin: mouse;"></a-entity>
 
     <!-- Interactive Entity with Full Gesture Rotation, Scale, and Positioning Enabled -->
     <a-entity 
       id="active-animal"
       class="cantap"
-      gesture-handler="minScale: 0.05; maxScale: 5.0; rotationFactor: 5;">
+      gesture-handler="minScale: 0.1; maxScale: 5.0; rotationFactor: 5;">
     </a-entity>
   </a-scene>
 
@@ -223,8 +227,8 @@
         entity.removeAttribute('gltf-model');
         entity.removeAttribute('animation-mixer');
 
-        // Bind preloaded asset selector IDs
-        entity.setAttribute('gltf-model', `#asset-${selected}`);
+        // Bind preloaded asset selector IDs explicitly using the exact dropdown value
+        entity.setAttribute('gltf-model', `#${selected}`);
 
         if (selected.includes('elephant')) {
           entity.setAttribute('scale', '0.4 0.4 0.4');
@@ -341,7 +345,7 @@
         };
 
         mediaRecorder.start();
-        recBtn.innerText = "Stop Recording ⏹️";
+        recBtn.innerText = "Stop Recording ⏹️️";
         recBtn.style.background = "#ff4444";
         recBtn.style.color = "#ffffff";
         isRecording = true;
