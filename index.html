@@ -10,6 +10,10 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
+  <!-- Touch & Gesture Handlers -->
+  <script src="https://cdn.jsdelivr.net/gh/fcor/aframe-gesture-detector-component@v1.0.1/gesture-detector.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/fcor/aframe-gesture-detector-component@v1.0.1/gesture-handler.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -120,6 +124,7 @@
       font-weight: 600;
       border-radius: 20px;
       cursor: pointer;
+      backdrop-filter: blur(4px);
     }
 
     .btn-action {
@@ -155,6 +160,7 @@
     <div class="control-row">
       <button class="ar-btn btn-home" onclick="goHome()">Home 🏠</button>
       <button class="ar-btn" onclick="toggleCamera()">Flip Cam 🔄</button>
+      <button class="ar-btn" onclick="playSound()">Roar 🔊</button>
     </div>
     <div class="control-row">
       <button class="ar-btn btn-action" onclick="takeSnapshot()">Take Photo 📸</button>
@@ -162,49 +168,75 @@
     </div>
   </div>
 
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+  <!-- Gesture-Enabled WebAR Scene -->
+  <a-scene 
+    embedded 
+    gesture-detector
+    arjs="sourceType: webcam; debugUIEnabled: false;" 
+    vr-mode-ui="enabled: false">
+    
     <a-light type="ambient" intensity="2.5"></a-light>
     <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
     <a-entity camera look-controls></a-entity>
-    <a-entity id="active-animal"></a-entity>
+    
+    <!-- Gesture Interactive Model Anchor -->
+    <a-entity 
+      id="active-animal"
+      class="cantap"
+      gesture-handler="minScale: 0.1; maxScale: 3.0;">
+    </a-entity>
   </a-scene>
 
   <script>
+    // Audio Resources
+    const SOUNDS = {
+      tiger: new Audio('https://cdn.freesound.org/previews/512/512132_10825368-lq.mp3'),
+      elephant: new Audio('https://cdn.freesound.org/previews/464/464871_9511679-lq.mp3')
+    };
+
+    function playSound() {
+      const selected = document.getElementById('animal-select').value;
+      const key = selected.includes('elephant') ? 'elephant' : 'tiger';
+      
+      if (SOUNDS[key]) {
+        SOUNDS[key].currentTime = 0;
+        SOUNDS[key].play().catch(e => console.log('Audio permission required:', e));
+      }
+    }
+
     document.getElementById('launch-btn').addEventListener('click', function() {
       const selected = document.getElementById('animal-select').value;
       const entity = document.getElementById('active-animal');
 
       if (entity) {
-        // Reset previous components
         entity.removeAttribute('gltf-model');
         entity.removeAttribute('animation-mixer');
 
-        // Configure Model Source & Transforms
         if (selected === 'tiger_anim') {
           entity.setAttribute('gltf-model', 'assets/tiger_anim.glb');
           entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0'); // Facing camera forward
+          entity.setAttribute('rotation', '0 0 0');
           entity.setAttribute('position', '0 -1.2 -2.0');
           entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
         } 
         else if (selected === 'elephant_anim') {
           entity.setAttribute('gltf-model', 'assets/elephant_anim.glb');
           entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0'); // Facing camera forward
+          entity.setAttribute('rotation', '0 0 0');
           entity.setAttribute('position', '0 -1.2 -2.5');
           entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
         } 
         else if (selected === 'tiger') {
           entity.setAttribute('gltf-model', 'assets/tiger.glb');
           entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0'); // Fixed: Changed from 0 180 0 to face forward
+          entity.setAttribute('rotation', '0 0 0');
           entity.setAttribute('position', '0 -1.2 -2.0');
         } 
         else if (selected === 'elephant') {
           entity.setAttribute('gltf-model', 'assets/elephant.glb');
           entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0'); // Facing camera forward
+          entity.setAttribute('rotation', '0 0 0');
           entity.setAttribute('position', '0 -1.2 -2.5');
         }
       }
@@ -242,13 +274,14 @@
       }
     }
 
-    function takeSnapshot() {
-      const sceneEl = document.querySelector('a-scene');
+    // High-Resolution Native Sensor Snapshot with Web Share Integration
+    async function takeSnapshot() {
       const videoEl = document.querySelector('video');
-      
+      const sceneEl = document.querySelector('a-scene');
+
       const canvas = document.createElement('canvas');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = videoEl ? (videoEl.videoWidth || window.innerWidth) : window.innerWidth;
+      canvas.height = videoEl ? (videoEl.videoHeight || window.innerHeight) : window.innerHeight;
       const ctx = canvas.getContext('2d');
 
       if (videoEl) ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
@@ -256,14 +289,31 @@
       const arCanvas = sceneEl.components.screenshot.getCanvas('perspective');
       ctx.drawImage(arCanvas, 0, 0, canvas.width, canvas.height);
 
-      ctx.font = 'bold 22px Arial';
+      ctx.font = 'bold 36px Arial';
       ctx.fillStyle = '#00ff88';
-      ctx.fillText('TZP WILDLIFE AR', 30, 50);
+      ctx.fillText('TZP WILDLIFE AR', 40, 80);
 
-      const link = document.createElement('a');
-      link.download = `TZP-AR-Photo-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], `TZP-AR-Selfie-${Date.now()}.png`, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'TZP Wildlife AR Selfie',
+              text: 'Check out my wildlife encounter at Thrissur Zoological Park!'
+            });
+            return;
+          } catch (err) {
+            console.log('Share fallback:', err);
+          }
+        }
+
+        const link = document.createElement('a');
+        link.download = file.name;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+      }, 'image/png');
     }
 
     let mediaRecorder;
