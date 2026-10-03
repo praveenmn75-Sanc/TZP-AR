@@ -16,7 +16,7 @@
       overflow: hidden;
       font-family: Arial, sans-serif;
       background-color: #000;
-      touch-action: none; /* Prevents browser pull-to-refresh */
+      touch-action: none;
     }
 
     /* Landing Screen Overlay */
@@ -73,6 +73,23 @@
       box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
     }
 
+    /* Loading Indicator */
+    #loading-indicator {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ff88;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 15px 30px;
+      border-radius: 10px;
+      border: 1px solid #00ff88;
+      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.2);
+    }
+
     /* Watermark */
     #watermark {
       display: none;
@@ -121,7 +138,6 @@
       font-weight: 600;
       border-radius: 20px;
       cursor: pointer;
-      backdrop-filter: blur(4px);
     }
 
     .btn-action {
@@ -137,7 +153,7 @@
   </style>
 
   <script>
-    // Custom Touch Engine (Bypasses Raycaster entirely for flawless mobile AR interaction)
+    // Custom Touch Engine with Vertical (Pitch) & Horizontal (Yaw) Rotation
     AFRAME.registerComponent('model-controls', {
       init: function () {
         this.pointers = {};
@@ -165,15 +181,22 @@
         window.addEventListener('touchmove', (e) => {
           if (e.target.closest('#ar-ui') || e.target.closest('#landing-screen')) return;
 
-          // 1-Finger Rotation
+          // 1-Finger Rotation (Vertical + Horizontal)
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const oldTouch = this.pointers[touch.identifier];
             if (oldTouch) {
               const deltaX = touch.clientX - oldTouch.x;
-              const currentRot = this.el.getAttribute('rotation') || {x: 0, y: 0, z: 0};
-              // Set rotation directly using string format to ensure A-Frame updates
-              this.el.setAttribute('rotation', `${currentRot.x} ${currentRot.y + (deltaX * 0.6)} ${currentRot.z}`);
+              const deltaY = touch.clientY - oldTouch.y; // Added vertical tracking
+              
+              let currentRot = this.el.getAttribute('rotation');
+              if (!currentRot) currentRot = {x: 0, y: 0, z: 0};
+
+              this.el.setAttribute('rotation', {
+                x: currentRot.x + (deltaY * 0.6), // Dragging up/down tilts vertically
+                y: currentRot.y + (deltaX * 0.6), // Dragging left/right spins horizontally
+                z: currentRot.z
+              });
             }
             this.pointers[touch.identifier] = { x: touch.clientX, y: touch.clientY };
           }
@@ -187,9 +210,9 @@
               const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
               const scaleRatio = currentDist / this.initialDistance;
               let newScale = this.baseScale * scaleRatio;
-              newScale = Math.max(0.05, Math.min(newScale, 5.0)); // Min/Max scale limit
+              newScale = Math.max(0.05, Math.min(newScale, 5.0)); 
               
-              this.el.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
+              this.el.setAttribute('scale', {x: newScale, y: newScale, z: newScale});
 
               this.pointers[t1.identifier] = { x: t1.clientX, y: t1.clientY };
               this.pointers[t2.identifier] = { x: t2.clientX, y: t2.clientY };
@@ -221,6 +244,8 @@
     <button class="btn-launch" id="launch-btn">Launch AR Camera</button>
   </div>
 
+  <div id="loading-indicator">Loading 3D Model... ⏳</div>
+
   <!-- Watermark Overlay -->
   <div id="watermark">TZP WILDLIFE AR</div>
 
@@ -237,25 +262,24 @@
     </div>
   </div>
 
-  <!-- Clean WebAR Scene -->
+  <!-- CRITICAL FIX: Added Meshopt and Draco decoders to support compressed Elephant assets -->
   <a-scene 
     embedded 
     arjs="sourceType: webcam; debugUIEnabled: false;" 
-    vr-mode-ui="enabled: false">
+    vr-mode-ui="enabled: false"
+    gltf-model="dracoDecoderPath: https://www.gstatic.com/draco/v1/decoders/; meshoptDecoderPath: https://unpkg.com/meshoptimizer@0.18.1/meshopt_decoder.js;">
 
     <a-light type="ambient" intensity="2.5"></a-light>
     <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
     <a-entity camera look-controls></a-entity>
 
-    <!-- Container that holds the touch engine logic and transforms -->
     <a-entity 
       id="animal-container" 
       model-controls 
       position="0 -1.2 -2.2"
       scale="0.4 0.4 0.4"
       rotation="0 0 0">
-      <!-- Models will be injected here dynamically -->
     </a-entity>
   </a-scene>
 
@@ -276,31 +300,37 @@
       }
     }
 
-    // Dynamic Injection Logic to solve model swapping bugs
     document.getElementById('launch-btn').addEventListener('click', function() {
       const selected = document.getElementById('animal-select').value;
       const container = document.getElementById('animal-container');
 
       if (container) {
-        // Completely destroy the old model to force WebGL to load the new one cleanly
+        // Show loading text
+        document.getElementById('loading-indicator').style.display = 'block';
+        
         container.innerHTML = ''; 
         
-        // Reset container transforms back to default on fresh launch
-        container.setAttribute('scale', '0.4 0.4 0.4');
-        container.setAttribute('rotation', '0 0 0');
+        container.setAttribute('scale', {x: 0.4, y: 0.4, z: 0.4});
+        container.setAttribute('rotation', {x: 0, y: 0, z: 0});
 
-        // Create a brand new A-Frame entity
         const newAnimal = document.createElement('a-entity');
-        
-        // Use direct filepath string, no url() wrapping
         newAnimal.setAttribute('gltf-model', `assets/${selected}.glb`);
         
-        // Append animation if needed
         if (selected.includes('anim')) {
           newAnimal.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
         }
 
-        // Add to scene
+        // Hide loading indicator when model successfully loads
+        newAnimal.addEventListener('model-loaded', () => {
+          document.getElementById('loading-indicator').style.display = 'none';
+        });
+
+        // Debugging event in case file path or compression fails
+        newAnimal.addEventListener('model-error', (err) => {
+          document.getElementById('loading-indicator').innerText = 'Error loading model ❌';
+          console.error("A-Frame Model Error: ", err);
+        });
+
         container.appendChild(newAnimal);
       }
 
@@ -312,13 +342,14 @@
     function goHome() {
       const container = document.getElementById('animal-container');
       if (container) {
-        container.innerHTML = ''; // Clear model from memory when going home
+        container.innerHTML = ''; 
       }
       if (isRecording) toggleVideoRecord();
 
       document.getElementById('landing-screen').style.display = 'flex';
       document.getElementById('ar-ui').style.display = 'none';
       document.getElementById('watermark').style.display = 'none';
+      document.getElementById('loading-indicator').style.display = 'none';
     }
 
     let facingMode = 'environment';
@@ -336,7 +367,6 @@
       }
     }
 
-    // High-Resolution Native Sensor Snapshot
     async function takeSnapshot() {
       const videoEl = document.querySelector('video');
       const sceneEl = document.querySelector('a-scene');
