@@ -10,17 +10,13 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
-  <!-- Touch & Gesture Handlers -->
-  <script src="https://cdn.jsdelivr.net/gh/fcor/aframe-gesture-detector-component@v1.0.1/gesture-detector.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/fcor/aframe-gesture-detector-component@v1.0.1/gesture-handler.js"></script>
-
   <style>
     body {
       margin: 0;
       overflow: hidden;
       font-family: Arial, sans-serif;
       background-color: #000;
-      touch-action: none; /* Prevents browser pull-to-refresh interfering with 3D scaling */
+      touch-action: none; /* Prevents browser pull-to-refresh */
     }
 
     /* Landing Screen Overlay */
@@ -139,6 +135,77 @@
       border: 1px solid rgba(255, 255, 255, 0.4);
     }
   </style>
+
+  <script>
+    // Custom Native Touch Component for Rotation & Scaling (Bypasses Raycasting)
+    AFRAME.registerComponent('model-controls', {
+      init: function () {
+        this.pointers = {};
+        this.baseScale = 0.4;
+        this.initialDistance = 0;
+
+        window.addEventListener('touchstart', (e) => {
+          if (e.target.closest('.ar-btn') || e.target.closest('#landing-screen')) return;
+          for (let i = 0; i < e.touches.length; i++) {
+            this.pointers[e.touches[i].identifier] = e.touches[i];
+          }
+          if (Object.keys(this.pointers).length === 2) {
+            const keys = Object.keys(this.pointers);
+            const p1 = this.pointers[keys[0]];
+            const p2 = this.pointers[keys[1]];
+            this.initialDistance = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+            this.baseScale = this.el.getAttribute('scale').x;
+          }
+        }, {passive: false});
+
+        window.addEventListener('touchmove', (e) => {
+          if (e.target.closest('.ar-btn') || e.target.closest('#landing-screen')) return;
+          
+          // 1 Finger = Rotate
+          if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const oldTouch = this.pointers[touch.identifier];
+            if (oldTouch) {
+              const deltaX = touch.clientX - oldTouch.clientX;
+              const rotation = this.el.getAttribute('rotation');
+              this.el.setAttribute('rotation', {
+                x: rotation.x,
+                y: rotation.y + (deltaX * 0.8), // Rotation speed multiplier
+                z: rotation.z
+              });
+            }
+            this.pointers[touch.identifier] = touch;
+          }
+          // 2 Fingers = Scale
+          else if (e.touches.length === 2) {
+            const keys = Object.keys(this.pointers);
+            const t1 = Array.from(e.touches).find(t => t.identifier == keys[0]);
+            const t2 = Array.from(e.touches).find(t => t.identifier == keys[1]);
+            
+            if (t1 && t2) {
+              const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+              const scaleRatio = currentDist / this.initialDistance;
+              let newScale = this.baseScale * scaleRatio;
+              newScale = Math.max(0.05, Math.min(newScale, 5.0)); // Clamp min/max scale
+              this.el.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
+              
+              this.pointers[t1.identifier] = t1;
+              this.pointers[t2.identifier] = t2;
+            }
+          }
+        }, {passive: false});
+
+        window.addEventListener('touchend', (e) => {
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            delete this.pointers[e.changedTouches[i].identifier];
+          }
+          if (Object.keys(this.pointers).length < 2) {
+            this.baseScale = this.el.getAttribute('scale').x;
+          }
+        });
+      }
+    });
+  </script>
 </head>
 <body>
 
@@ -171,33 +238,21 @@
     </div>
   </div>
 
-  <!-- WebAR Scene with Preloaded Asset Cache & Gesture Handlers -->
+  <!-- WebAR Scene (No a-assets preloader causing timeouts) -->
   <a-scene 
     embedded 
-    gesture-detector
     arjs="sourceType: webcam; debugUIEnabled: false;" 
     vr-mode-ui="enabled: false">
-
-    <!-- Increased timeout to 60 seconds to ensure 25MB+ GLB files don't fail -->
-    <a-assets timeout="60000">
-      <!-- IDs perfectly match the dropdown values to resolve parsing errors -->
-      <a-asset-item id="tiger_anim" src="assets/tiger_anim.glb"></a-asset-item>
-      <a-asset-item id="elephant_anim" src="assets/elephant_anim.glb"></a-asset-item>
-      <a-asset-item id="tiger" src="assets/tiger.glb"></a-asset-item>
-      <a-asset-item id="elephant" src="assets/elephant.glb"></a-asset-item>
-    </a-assets>
 
     <a-light type="ambient" intensity="2.5"></a-light>
     <a-light type="directional" position="1 4 2" intensity="2.0"></a-light>
 
-    <!-- CRITICAL FIX: Raycaster and cursor bound to the camera to detect touch intersections on the model -->
-    <a-entity camera look-controls raycaster="objects: .cantap" cursor="fuse: false; rayOrigin: mouse;"></a-entity>
+    <a-entity camera look-controls></a-entity>
 
-    <!-- Interactive Entity with Full Gesture Rotation, Scale, and Positioning Enabled -->
+    <!-- Custom model-controls attribute attached -->
     <a-entity 
       id="active-animal"
-      class="cantap"
-      gesture-handler="minScale: 0.1; maxScale: 5.0; rotationFactor: 5;">
+      model-controls>
     </a-entity>
   </a-scene>
 
@@ -223,27 +278,29 @@
       const entity = document.getElementById('active-animal');
 
       if (entity) {
-        // Reset existing attributes completely
+        // Clear old model entirely
         entity.removeAttribute('gltf-model');
         entity.removeAttribute('animation-mixer');
 
-        // Bind preloaded asset selector IDs explicitly using the exact dropdown value
-        entity.setAttribute('gltf-model', `#${selected}`);
+        // Allow A-Frame a brief moment to clear cache before assigning the new model directly
+        setTimeout(() => {
+          entity.setAttribute('gltf-model', `url(assets/${selected}.glb)`);
 
-        if (selected.includes('elephant')) {
-          entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0');
-          entity.setAttribute('position', '0 -1.2 -2.5');
-        } else {
-          entity.setAttribute('scale', '0.4 0.4 0.4');
-          entity.setAttribute('rotation', '0 0 0');
-          entity.setAttribute('position', '0 -1.2 -2.0');
-        }
+          if (selected.includes('elephant')) {
+            entity.setAttribute('scale', '0.4 0.4 0.4');
+            entity.setAttribute('rotation', '0 0 0');
+            entity.setAttribute('position', '0 -1.2 -2.5');
+          } else {
+            entity.setAttribute('scale', '0.4 0.4 0.4');
+            entity.setAttribute('rotation', '0 0 0');
+            entity.setAttribute('position', '0 -1.2 -2.0');
+          }
 
-        // Enable rigging animation if animated choice
-        if (selected.includes('anim')) {
-          entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
-        }
+          // Enable rigging animation if animated choice
+          if (selected.includes('anim')) {
+            entity.setAttribute('animation-mixer', 'clip: *; loop: repeat;');
+          }
+        }, 50);
       }
 
       document.getElementById('landing-screen').style.display = 'none';
@@ -345,7 +402,7 @@
         };
 
         mediaRecorder.start();
-        recBtn.innerText = "Stop Recording ⏹️️";
+        recBtn.innerText = "Stop Recording ⏹";
         recBtn.style.background = "#ff4444";
         recBtn.style.color = "#ffffff";
         isRecording = true;
